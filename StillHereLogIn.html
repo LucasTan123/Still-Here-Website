@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+
+<style>
+    /* Style the page body */
+    body {
+        background: #1e1b2c;
+        font-family: Arial, sans-serif;
+        display: flex;
+        height: 100vh; /* full viewport height */
+        justify-content: center; /* center horizontally */
+        align-items: center; /* center vertically */
+        color: #d6d9ff;
+        margin: 0;
+    }
+
+    /* Style the login box */
+    .login-box {
+        background: #2a2540;
+        padding: 30px;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 360px;
+        border: 1px solid #7a6fcf;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #c3baff;
+    }
+
+    /* Style input fields */
+    input {
+        width: 90%;
+        max-width: 280px;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        margin-bottom: 15px;
+        background: #3a3455;
+        color: white;
+        font-size: 14px;
+    }
+
+    /* Style the login button */
+    button {
+        width: 60%;
+        max-width: 160px;
+        padding: 12px;
+        background: #7a6fcf;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        color: white;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #9c8fff;
+    }
+
+    /* Style the error message */
+    #errorBox {
+        color: #ff7d7d;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- Login Form -->
+<div class="login-box">
+    <h2>Login</h2>
+
+    <!-- Email input field -->
+    <input id="email" type="email" placeholder="Enter your email" />
+
+    <!-- Login button -->
+    <button onclick="login()">Login</button>
+
+    <!-- Error message container -->
+    <p id="errorBox"></p>
+</div>
+
+<script type="module">
+    // Import Firebase app and database functions
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+
+    // Firebase project configuration
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "itd-and-dda-assignment-1.firebaseapp.com",
+        databaseURL: "https://itd-and-dda-assignment-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "itd-and-dda-assignment-1",
+        storageBucket: "itd-and-dda-assignment-1.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase app and database reference
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Function called when login button is clicked
+    window.login = function () {
+        const email = document.getElementById("email").value.trim(); // get email input
+        const errorBox = document.getElementById("errorBox"); // get error box element
+
+        // If email field is empty, show error
+        if (email === "") {
+            errorBox.innerText = "Please enter your email.";
+            return;
+        }
+
+        const usersRef = ref(db, "users"); // reference "users" node in Firebase database
+
+        // Read data from Firebase once
+        onValue(usersRef, (snapshot) => {
+            const data = snapshot.val(); // get all users
+            const users = Object.values(data); // convert users object into array
+
+            // Check if entered email exists in the database
+            const match = users.find(user => user.email === email);
+
+            if (!match) {
+                errorBox.innerText = "Email not found."; // show error if no match
+                return;
+            }
+
+            // Save logged-in email in local storage (used for highlighting in dashboard)
+            localStorage.setItem("loggedInEmail", email);
+
+            // Redirect to main dashboard page
+            window.location.href = "website for ITD.html";
+        }, { onlyOnce: true }); // read the data only once
+    };
+</script>
+</body>
+</html>

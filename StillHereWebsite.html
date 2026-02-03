@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quest leaderboard</title>
+
+    <style>
+        /* Page background and font */
+        body {
+            background: #1e1b2c;
+            color: #c0c4ff;
+            font-family: Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Banner at the top */
+        .banner {
+            padding: 60px 30px;
+            text-align: center;
+            color: #b19cd9;
+            font-size: 40px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #3a3a5e, #5a4e8f);
+            border-bottom: 2px solid #8a7fcf;
+        }
+
+        /* Main content area */
+        .content {
+            padding: 30px;
+        }
+
+        /* Card container for leaderboards */
+        .card {
+            background: #2a2540;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #7a6fcf;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            color: #c3baff;
+            margin-top: 0;
+        }
+
+        /* Leaderboard table styling */
+        table {
+            width: 100%;
+            margin-top: 15px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border-bottom: 1px solid #7a6fcf;
+            padding: 10px;
+            color: #d6d9ff;
+        }
+
+        th {
+            font-weight: bold;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .left {
+            text-align: left;
+        }
+
+        /* Highlight the logged-in user */
+        .highlight {
+            background: #5a4e8f !important;
+            color: #ffffff !important;
+            font-weight: bold;
+            box-shadow: 0 0 10px #b19cd9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Top banner -->
+    <div class="banner">
+        <h1>Quest Leaderboard</h1>
+    </div>
+
+    <!-- Leaderboard content -->
+    <div class="content">
+
+        <!-- Fastest Time Leaderboard -->
+        <div class="card">
+            <h2>Fastest Time Leaderboard</h2>
+            <table>
+                <tr>
+                    <th class="left">User</th>
+                    <th class="right">Time Taken</th>
+                </tr>
+                <tbody id="timeLeaderboard"></tbody>
+            </table>
+        </div>
+
+        <!-- Highest Score Leaderboard -->
+        <div class="card">
+            <h2>Highest Score Leaderboard</h2>
+            <table>
+                <tr>
+                    <th class="left">User</th>
+                    <th class="right">Score</th>
+                </tr>
+                <tbody id="scoreLeaderboard"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Firebase script to fetch and display data -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "itd-and-dda-assignment-1.firebaseapp.com",
+            databaseURL: "https://itd-and-dda-assignment-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "itd-and-dda-assignment-1",
+            storageBucket: "itd-and-dda-assignment-1.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase app and database
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Get the email of the currently logged-in user from local storage
+        const loggedEmail = localStorage.getItem("loggedInEmail");
+
+        const usersRef = ref(db, "users");
+
+        // Fetch user data from Firebase
+        onValue(usersRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return; // Exit if no data exists
+
+            const users = Object.values(data); // Convert object to array
+
+            // ------------------------------
+            // FASTEST TIME LEADERBOARD
+            // ------------------------------
+            const timeSorted = [...users].sort((a, b) => a.time_taken - b.time_taken);
+            document.getElementById("timeLeaderboard").innerHTML =
+                timeSorted.map(user => `
+                    <tr class="${user.email === loggedEmail ? 'highlight' : ''}">
+                        <td class="left">${user.email}</td>
+                        <td class="right">${user.time_taken.toFixed(2)}s</td>
+                    </tr>
+                `).join("");
+
+            // ------------------------------
+            // HIGHEST SCORE LEADERBOARD
+            // ------------------------------
+            const scoreSorted = [...users].sort((a, b) => b.score - a.score);
+            document.getElementById("scoreLeaderboard").innerHTML =
+                scoreSorted.map(user => `
+                    <tr class="${user.email === loggedEmail ? 'highlight' : ''}">
+                        <td class="left">${user.email}</td>
+                        <td class="right">${user.score}</td>
+                    </tr>
+                `).join("");
+        });
+    </script>
+
+</body>
+</html>
