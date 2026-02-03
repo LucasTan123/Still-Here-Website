@@ -22,10 +22,10 @@ body {
 }
 
 h2 {
-    color: #ffffff;
     margin-top: 0;
 }
 
+/* ---------- RUNS ---------- */
 .run {
     background: #4d4d4d;
     padding: 12px;
@@ -34,13 +34,18 @@ h2 {
     cursor: pointer;
 }
 
+.run.highlight {
+    background: #6a6a6a;
+    border: 1px solid #ffffff;
+}
+
 .run-details {
     display: none;
     margin-top: 10px;
     font-size: 14px;
 }
 
-/* TABLE STYLING */
+/* ---------- TABLE ---------- */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -52,12 +57,12 @@ th, td {
     border-bottom: 1px solid #c3c3c3;
 }
 
-.left {
-    text-align: left;
-}
+.left { text-align: left; }
+.right { text-align: right; }
 
-.right {
-    text-align: right;
+.highlight-row {
+    background: #6a6a6a;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -92,7 +97,7 @@ th, td {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
-/* ---------- FIREBASE CONFIG ---------- */
+/* ---------- FIREBASE ---------- */
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "still-here-b0b26.firebaseapp.com",
@@ -106,19 +111,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const email = localStorage.getItem("loggedInEmail");
+const loggedInEmail = localStorage.getItem("loggedInEmail");
 
-/* ---------- PLAYER DATA + PREVIOUS RUNS ---------- */
-const usersRef = ref(db, "Users");
-
-onValue(usersRef, (snapshot) => {
+/* ---------- PLAYER DATA + RUNS ---------- */
+onValue(ref(db, "Users"), (snapshot) => {
     const users = snapshot.val();
     if (!users) return;
 
-    const user = Object.values(users).find(u => u.Email === email);
+    const user = Object.values(users).find(u => u.Email === loggedInEmail);
     if (!user) return;
 
-    // Player stats
     document.getElementById("endings").innerText = user.Endings || 0;
 
     const runsContainer = document.getElementById("runs");
@@ -126,28 +128,18 @@ onValue(usersRef, (snapshot) => {
 
     if (!user.Runs) return;
 
-    // Convert runs to array
-    let runsArray = Object.values(user.Runs);
+    let runsArray = Object.values(user.Runs)
+        .sort((a, b) => (a.RunNumber ?? 0) - (b.RunNumber ?? 0))
+        .slice(0, 4);
 
-    // Sort so FIRST run appears at the top
-    runsArray.sort((a, b) => {
-        if (a.RunNumber !== undefined && b.RunNumber !== undefined) {
-            return a.RunNumber - b.RunNumber;
-        }
-        return 0;
-    });
-
-    // Limit to 4 previous runs
-    runsArray = runsArray.slice(0, 4);
-
-    runsArray.forEach((run) => {
+    runsArray.forEach(run => {
         const div = document.createElement("div");
-        div.className = "run";
+        div.className = "run highlight";
 
         div.innerHTML = `
-            <strong>Run ${run.RunNumber ?? "?"}</strong> — ${formatTime(run.Time)}
+            <strong>Run ${run.RunNumber}</strong> — ${formatTime(run.Time)}
             <div class="run-details">
-                <p><strong>Run Number:</strong> ${run.RunNumber ?? "N/A"}</p>
+                <p><strong>Run Number:</strong> ${run.RunNumber}</p>
                 <p><strong>Time:</strong> ${formatTime(run.Time)}</p>
                 <p><strong>Tasks Completed:</strong></p>
                 ${Object.entries(run.TasksCompleted || {}).map(
@@ -156,7 +148,6 @@ onValue(usersRef, (snapshot) => {
             </div>
         `;
 
-        // Dropdown toggle
         div.onclick = () => {
             const details = div.querySelector(".run-details");
             details.style.display =
@@ -168,24 +159,23 @@ onValue(usersRef, (snapshot) => {
 });
 
 /* ---------- LEADERBOARD ---------- */
-const leaderboardRef = ref(db, "Leaderboard");
-
-onValue(leaderboardRef, (snapshot) => {
+onValue(ref(db, "Leaderboard"), (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
+    // Fastest time FIRST
     data.sort((a, b) => a.Time - b.Time);
 
     document.getElementById("leaderboard").innerHTML =
         data.map(entry => `
-            <tr>
+            <tr class="${entry.Username === loggedInEmail ? 'highlight-row' : ''}">
                 <td class="left">${entry.Username}</td>
                 <td class="right">${formatTime(entry.Time)}</td>
             </tr>
         `).join("");
 });
 
-/* ---------- HELPERS ---------- */
+/* ---------- TIME FORMAT ---------- */
 function formatTime(seconds) {
     const min = Math.floor(seconds / 60);
     const sec = seconds % 60;
