@@ -4,76 +4,96 @@
 <meta charset="UTF-8">
 <title>Still Here – Dashboard</title>
 
-<!-- GOOGLE FONT -->
 <link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet">
 
 <style>
-/* ---------- GLOBAL ---------- */
 * {
     font-family: "Just Me Again Down Here", cursive;
-}
-
-body {
-    background: #e6d7bd;
-    color: #1b1b1b;
-    padding: 30px;
-    background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
-    background-size: 4px 4px;
-}
-
-h2 {
-    margin-top: 0;
-    letter-spacing: 2px;
-    font-size: 34px;
-}
-
-/* ---------- CARDS ---------- */
-.card {
-    background: #f4ecd8;
-    padding: 22px;
-    margin-bottom: 25px;
-    border: 2px solid #1b1b1b;
-    box-shadow: 6px 6px 0 #1b1b1b;
-}
-
-/* ---------- RUNS ---------- */
-.run {
-    background: #1b1b1b;
-    color: #ffffff;
-    padding: 14px;
-    margin-bottom: 12px;
-    cursor: pointer;
     font-size: 22px;
 }
 
+body {
+    background: #d8cbb0;
+    background-image:
+        radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+        linear-gradient(#d8cbb0, #cfc2a6);
+    color: #1b1b1b;
+    padding: 40px;
+}
+
+/* LOGO */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.header img {
+    width: 300px;
+}
+
+/* PAPER CARDS */
+.card {
+    background: #f2e6c9;
+    padding: 30px;
+    margin-bottom: 35px;
+    border: 3px solid #1b1b1b;
+    box-shadow: 6px 6px 0 #1b1b1b, inset 0 0 35px rgba(0,0,0,0.25);
+    position: relative;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
+    background-size: 3px 3px;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+h2 {
+    font-size: 40px;
+    letter-spacing: 2px;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* RUNS */
+.run {
+    background: #1b1b1b;
+    color: #ffffff;
+    padding: 18px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    font-size: 26px;
+}
+
 .run:hover {
-    background: #2b2b2b;
+    background: #333;
 }
 
 .run-details {
     display: none;
-    margin-top: 10px;
-    font-size: 20px;
-    background: #f4ecd8;
-    color: #1b1b1b;
-    padding: 10px;
+    margin-top: 12px;
+    padding: 16px;
+    background: #f2e6c9;
+    font-size: 24px;
 }
 
-/* ---------- TABLE ---------- */
+/* TABLE */
 table {
     width: 100%;
     border-collapse: collapse;
 }
 
-th {
-    text-transform: uppercase;
-    font-size: 20px;
+th, td {
+    padding: 14px;
+    font-size: 26px;
     border-bottom: 2px solid #1b1b1b;
 }
 
-th, td {
-    padding: 10px;
-    font-size: 22px;
+th {
+    text-transform: uppercase;
 }
 
 .left { text-align: left; }
@@ -89,19 +109,20 @@ th, td {
 
 <body>
 
-<!-- PLAYER STATS -->
+<div class="header">
+    <img src="StillHereLogo.png" alt="Still Here Logo">
+</div>
+
 <div class="card">
     <h2>Player Stats</h2>
     <p><strong>Endings Achieved:</strong> <span id="endings">0</span></p>
 </div>
 
-<!-- PREVIOUS RUNS -->
 <div class="card">
     <h2>Previous Runs</h2>
     <div id="runs"></div>
 </div>
 
-<!-- LEADERBOARD -->
 <div class="card">
     <h2>Leaderboard</h2>
     <table>
@@ -132,7 +153,7 @@ const db = getDatabase(app);
 
 const loggedInEmail = localStorage.getItem("loggedInEmail");
 
-/* ---------- PLAYER DATA + RUNS ---------- */
+/* PLAYER + RUNS */
 onValue(ref(db, "Users"), (snapshot) => {
     const users = snapshot.val();
     if (!users) return;
@@ -168,14 +189,15 @@ onValue(ref(db, "Users"), (snapshot) => {
 
             div.onclick = () => {
                 const details = div.querySelector(".run-details");
-                details.style.display = details.style.display === "block" ? "none" : "block";
+                details.style.display =
+                    details.style.display === "block" ? "none" : "block";
             };
 
             runsContainer.appendChild(div);
         });
 });
 
-/* ---------- LEADERBOARD ---------- */
+/* LEADERBOARD */
 onValue(ref(db, "Leaderboard"), (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
@@ -191,7 +213,7 @@ onValue(ref(db, "Leaderboard"), (snapshot) => {
         `).join("");
 });
 
-/* ---------- TIME FORMAT ---------- */
+/* TIME FORMAT */
 function formatTime(seconds) {
     const min = Math.floor(seconds / 60);
     const sec = seconds % 60;
