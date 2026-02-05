@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>StillHereWebsite</title>
+<title>Still Here – Dashboard</title>
+
+<!-- GOOGLE FONT -->
+<link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet">
 
 <style>
 /* ---------- GLOBAL ---------- */
+* {
+    font-family: "Just Me Again Down Here", cursive;
+}
+
 body {
     background: #e6d7bd;
     color: #1b1b1b;
-    font-family: "Georgia", serif;
     padding: 30px;
     background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
     background-size: 4px 4px;
@@ -17,14 +23,14 @@ body {
 
 h2 {
     margin-top: 0;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    font-size: 34px;
 }
 
 /* ---------- CARDS ---------- */
 .card {
     background: #f4ecd8;
     padding: 22px;
-    border-radius: 6px;
     margin-bottom: 25px;
     border: 2px solid #1b1b1b;
     box-shadow: 6px 6px 0 #1b1b1b;
@@ -37,7 +43,7 @@ h2 {
     padding: 14px;
     margin-bottom: 12px;
     cursor: pointer;
-    font-family: Arial, sans-serif;
+    font-size: 22px;
 }
 
 .run:hover {
@@ -47,7 +53,7 @@ h2 {
 .run-details {
     display: none;
     margin-top: 10px;
-    font-size: 14px;
+    font-size: 20px;
     background: #f4ecd8;
     color: #1b1b1b;
     padding: 10px;
@@ -61,12 +67,13 @@ table {
 
 th {
     text-transform: uppercase;
-    font-size: 13px;
+    font-size: 20px;
     border-bottom: 2px solid #1b1b1b;
 }
 
 th, td {
     padding: 10px;
+    font-size: 22px;
 }
 
 .left { text-align: left; }
@@ -110,7 +117,6 @@ th, td {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
-/* ---------- FIREBASE ---------- */
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "still-here-b0b26.firebaseapp.com",
