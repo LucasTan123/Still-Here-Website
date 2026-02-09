@@ -119,13 +119,17 @@ getDatabase();
 
 window.login = function () {
     const email = document.getElementById("email").value.trim();
+
     if (!email) {
         document.getElementById("error").innerText = "Please enter an email.";
         return;
     }
 
+    // Store email for dashboard
     localStorage.setItem("loggedInEmail", email);
-    window.location.href = "dashboard.html";
+
+    // ✅ FIXED REDIRECT
+    window.location.href = "StillHereWebsite.html";
 };
 </script>
 

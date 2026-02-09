@@ -66,6 +66,10 @@ h2 {
     margin-bottom: 14px;
     cursor: pointer;
     font-size: 26px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .run:hover {
@@ -75,6 +79,7 @@ h2 {
 .run-details {
     display: none;
     margin-top: 12px;
+    margin-bottom: 18px;
     padding: 16px;
     background: #f2e6c9;
     font-size: 24px;
@@ -153,48 +158,55 @@ const db = getDatabase(app);
 
 const loggedInEmail = localStorage.getItem("loggedInEmail");
 
-/* PLAYER + RUNS */
-onValue(ref(db, "Users"), (snapshot) => {
-    const users = snapshot.val();
-    if (!users) return;
+/* PLAYER DATA */
+onValue(ref(db, "PlayerData"), (snapshot) => {
+    const players = snapshot.val();
+    if (!players || !loggedInEmail) return;
 
-    const user = Object.values(users).find(u => u.Email === loggedInEmail);
+    const user = Object.values(players).find(p => p.Email === loggedInEmail);
     if (!user) return;
 
-    document.getElementById("endings").innerText = user.Endings || 0;
+    /* ENDINGS */
+    document.getElementById("endings").innerText =
+        user.Endings ? user.Endings.length : 0;
 
+    /* PREVIOUS RUNS */
     const runsContainer = document.getElementById("runs");
     runsContainer.innerHTML = "";
 
-    if (!user.Runs) return;
+    if (!user.PreviousRuns) return;
 
-    Object.values(user.Runs)
-        .sort((a, b) => (a.RunNumber ?? 0) - (b.RunNumber ?? 0))
-        .slice(0, 4)
-        .forEach(run => {
-            const div = document.createElement("div");
-            div.className = "run";
+    const runsArray = Object.values(user.PreviousRuns);
 
-            div.innerHTML = `
-                <strong>Run ${run.RunNumber}</strong> — ${formatTime(run.Time)}
-                <div class="run-details">
-                    <p><strong>Run Number:</strong> ${run.RunNumber}</p>
-                    <p><strong>Time:</strong> ${formatTime(run.Time)}</p>
-                    <p><strong>Tasks Completed:</strong></p>
-                    ${Object.entries(run.TasksCompleted || {}).map(
-                        ([task, count]) => `<p>- ${task}: ${count}</p>`
-                    ).join("")}
-                </div>
-            `;
+    // TAKE LAST 4 RUNS
+    const lastFourRuns = runsArray.slice(-4);
 
-            div.onclick = () => {
-                const details = div.querySelector(".run-details");
-                details.style.display =
-                    details.style.display === "block" ? "none" : "block";
-            };
+    lastFourRuns.forEach((run, index) => {
+        const row = document.createElement("div");
+        row.className = "run";
+        row.innerHTML = `
+            <span><strong>Run ${runsArray.length - lastFourRuns.length + index + 1}</strong></span>
+            <span>${formatTime(run.Time)}</span>
+        `;
 
-            runsContainer.appendChild(div);
-        });
+        const details = document.createElement("div");
+        details.className = "run-details";
+        details.innerHTML = `
+            <p><strong>Time:</strong> ${formatTime(run.Time)}</p>
+            <p><strong>Tasks Completed:</strong></p>
+            ${(run.Tasklist || []).map(task =>
+                `<p>- ${task.TaskName}: ${task.CompletionCount}</p>`
+            ).join("")}
+        `;
+
+        row.onclick = () => {
+            details.style.display =
+                details.style.display === "block" ? "none" : "block";
+        };
+
+        runsContainer.appendChild(row);
+        runsContainer.appendChild(details);
+    });
 });
 
 /* LEADERBOARD */
