@@ -1,3 +1,5 @@
+new login code:
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,6 +98,7 @@ button:hover {
 
 <div class="login-box">
     <input id="email" type="email" placeholder="Enter your email">
+    <input id="password" type="password" placeholder="Enter your password">
     <button onclick="login()">Enter</button>
     <p id="error"></p>
 </div>
@@ -103,6 +106,7 @@ button:hover {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
@@ -114,22 +118,27 @@ const firebaseConfig = {
     appId: "YOUR_APP_ID"
 };
 
-initializeApp(firebaseConfig);
-getDatabase();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-window.login = function () {
-    const email = document.getElementById("email").value.trim();
+window.login = async function (){
+    const email = document.getElementById("Email").value.trim();
+    const password = document.getElementById("Password").value.trim();
 
-    if (!email) {
-        document.getElementById("error").innerText = "Please enter an email.";
+    if (!email || !password) {
+        document.getElementById("error").innerText = "Please enter both email and password.";
         return;
     }
 
-    // Store email for dashboard
-    localStorage.setItem("loggedInEmail", email);
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
 
-    // ✅ FIXED REDIRECT
-    window.location.href = "StillHereWebsite.html";
+        localStorage.setItem("loggedInEmail", email);
+
+        window.location.href = "StillHereHome.html";
+    } catch (error) {
+        document.getElementById("error").innerText = "Invalid login. Please try again.";
+    }
 };
 </script>
 
