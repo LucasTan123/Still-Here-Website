@@ -7,32 +7,97 @@
 <link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet">
 
 <style>
-* { font-family: "Just Me Again Down Here", cursive; font-size: 22px; }
+* { 
+    font-family: "Just Me Again Down Here", cursive; 
+    font-size: 32px; /* Increased base size */
+}
+
 body {
     background: #d8cbb0;
     background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
                       linear-gradient(#d8cbb0, #cfc2a6);
-    color: #1b1b1b; padding: 40px;
+    color: #1b1b1b;
+    padding: 60px;
 }
-.header { text-align: center; margin-bottom: 40px; }
-.header img { width: 300px; }
+
+.header { 
+    text-align: center; 
+    margin-bottom: 60px; 
+}
+
+.header img { 
+    width: 380px; 
+}
+
 .card {
-    background: #f2e6c9; padding: 30px; margin-bottom: 35px;
+    background: #f2e6c9;
+    padding: 50px;
+    margin-bottom: 50px;
     border: 3px solid #1b1b1b;
     box-shadow: 6px 6px 0 #1b1b1b, inset 0 0 35px rgba(0,0,0,0.25);
     position: relative;
 }
+
 .card::before {
-    content: ""; position: absolute; inset: 0;
+    content: "";
+    position: absolute;
+    inset: 0;
     background: radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
-    background-size: 3px 3px; mix-blend-mode: multiply; pointer-events: none;
+    background-size: 3px 3px;
+    mix-blend-mode: multiply;
+    pointer-events: none;
 }
-h2 { font-size: 40px; letter-spacing: 2px; margin-top: 0; margin-bottom: 20px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 14px; font-size: 26px; border-bottom: 2px solid #1b1b1b; }
-th { text-transform: uppercase; }
+
+h2 {
+    font-size: 56px; /* Bigger section headers */
+    letter-spacing: 2px;
+    margin-top: 0;
+    margin-bottom: 35px;
+}
+
+/* Bigger stats text */
+.card p {
+    font-size: 40px;
+    margin: 20px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 24px;
+    font-size: 40px; /* Bigger table text */
+    border-bottom: 2px solid #1b1b1b;
+}
+
+th { 
+    text-transform: uppercase; 
+}
+
 .left { text-align: left; }
 .right { text-align: right; }
+
+/* Bigger logout button */
+button {
+    padding: 24px 60px;
+    font-size: 44px;
+    background: #1b1b1b;
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 6px 6px 0 #000;
+}
+
+button:hover { 
+    background: #333; 
+}
+
+.logout-container {
+    text-align: center;
+    margin-top: 70px;
+}
 </style>
 </head>
 
@@ -44,6 +109,8 @@ th { text-transform: uppercase; }
 
 <div class="card">
     <h2>Player Stats</h2>
+    <p><strong>Total Runs:</strong> <span id="totalRuns">0</span></p>
+    <p><strong>Best Time:</strong> <span id="bestTime">0m 0s</span></p>
     <p><strong>Endings Achieved:</strong> <span id="endings">0</span></p>
 </div>
 
@@ -62,17 +129,21 @@ th { text-transform: uppercase; }
     <h2>Leaderboard</h2>
     <table>
         <tr>
-            <th class="left">Name</th>
+            <th class="left">Player</th>
             <th class="right">Best Time</th>
         </tr>
         <tbody id="leaderboard"></tbody>
     </table>
 </div>
 
+<div class="logout-container">
+    <button onclick="logout()">Logout</button>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBuEKw2v6nzXlbWh4TGJgdpSEg8tJ3M8zA",
@@ -88,75 +159,86 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Hard‑coded target UID
-const targetUid = "XZMCf5Tb3aPCbwEP9C0DJCbh9EC3";
+const uid = localStorage.getItem("loggedInUid");
 
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        console.warn("⚠️ No authenticated user on stats page. Database rules may block reads.");
-        return;
+if (!uid) {
+    window.location.href = "StillHereLogin.html";
+}
+
+// ---------- PLAYER DATA ----------
+get(ref(db, "PlayerData/" + uid)).then(snapshot => {
+
+    if (!snapshot.exists()) return;
+
+    const userData = snapshot.val();
+    const runs = userData.PreviousRuns || [];
+    const endings = userData.Endings || [];
+
+    document.getElementById("totalRuns").innerText = runs.length;
+    document.getElementById("endings").innerText = endings.length;
+
+    if (runs.length > 0) {
+        const bestTime = Math.min(...runs.map(r => r.Time || Infinity));
+        document.getElementById("bestTime").innerText = formatTime(bestTime);
     }
-    console.log("Authenticated user on stats page:", user.uid);
 
-    // --- Player Stats + Runs for target UID ---
-    onValue(ref(db, "PlayerData/" + targetUid), (snapshot) => {
-        console.log("✅ onValue callback fired for target UID");
+    const runsTable = document.getElementById("runs");
+    runsTable.innerHTML = "";
 
-        if (!snapshot.exists()) {
-            console.warn("⚠️ No data found for UID:", targetUid);
-            return;
-        }
+    runs.slice(-5).reverse().forEach((run, index) => {
+        runsTable.innerHTML += `
+            <tr>
+                <td class="left">Run ${runs.length - index}</td>
+                <td class="right">${formatTime(run.Time)}</td>
+            </tr>
+        `;
+    });
 
-        const userData = snapshot.val();
-        console.log("User data for target UID:", userData);
+});
 
-        // Endings
-        document.getElementById("endings").innerText =
-            (userData.Endings && userData.Endings.length) ? userData.Endings.length : 0;
+// ---------- LEADERBOARD ----------
+get(ref(db, "PlayerData")).then(snapshot => {
 
-        // Previous Runs
-        const runsTable = document.getElementById("runs");
-        runsTable.innerHTML = "";
-        const runsArray = userData.PreviousRuns || [];
-        console.log("PreviousRuns array:", runsArray);
+    if (!snapshot.exists()) return;
 
-        runsArray.slice(-4).forEach((run, index) => {
-            console.log("Run object:", run);
-            runsTable.innerHTML += `
-                <tr>
-                    <td class="left">Run ${runsArray.length - 4 + index + 1}</td>
-                    <td class="right">${formatTime(run.Time)}</td>
-                </tr>
-            `;
+    const players = snapshot.val();
+    const leaderboardEntries = [];
+
+    Object.entries(players).forEach(([uid, pdata]) => {
+
+        if (!pdata.PreviousRuns) return;
+
+        const validTimes = pdata.PreviousRuns
+            .map(r => r.Time)
+            .filter(t => typeof t === "number");
+
+        if (validTimes.length === 0) return;
+
+        leaderboardEntries.push({
+            uid: uid,
+            time: Math.min(...validTimes)
         });
     });
 
-    // --- Leaderboard ---
-    onValue(ref(db, "PlayerData"), (snapshot) => {
-        if (!snapshot.exists()) return;
-        const players = snapshot.val();
+    leaderboardEntries.sort((a, b) => a.time - b.time);
 
-        const leaderboardEntries = Object.entries(players).map(([uid, pdata]) => {
-            const runs = pdata.PreviousRuns || [];
-            if (runs.length === 0) return null;
-            const bestTime = Math.min(...runs.map(r => r.Time || Infinity));
-            return { 
-                Username: pdata.Username || pdata.Email || uid, 
-                Time: bestTime 
-            };
-        }).filter(Boolean);
+    document.getElementById("leaderboard").innerHTML =
+        leaderboardEntries.map(entry => `
+            <tr>
+                <td class="left">${entry.uid}</td>
+                <td class="right">${formatTime(entry.time)}</td>
+            </tr>
+        `).join("");
 
-        leaderboardEntries.sort((a, b) => a.Time - b.Time);
-
-        document.getElementById("leaderboard").innerHTML =
-            leaderboardEntries.map(entry => `
-                <tr>
-                    <td class="left">${entry.Username}</td>
-                    <td class="right">${formatTime(entry.Time)}</td>
-                </tr>
-            `).join("");
-    });
 });
+
+// ---------- LOGOUT ----------
+window.logout = function() {
+    signOut(auth).then(() => {
+        localStorage.removeItem("loggedInUid");
+        window.location.href = "StillHereLogin.html";
+    });
+};
 
 function formatTime(seconds) {
     if (!seconds || seconds === Infinity) return "No runs yet";
@@ -165,9 +247,6 @@ function formatTime(seconds) {
     return `${min}m ${sec}s`;
 }
 </script>
-
-
-
 
 </body>
 </html>
