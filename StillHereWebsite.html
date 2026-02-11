@@ -7,108 +7,32 @@
 <link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet">
 
 <style>
-* {
-    font-family: "Just Me Again Down Here", cursive;
-    font-size: 22px;
-}
-
+* { font-family: "Just Me Again Down Here", cursive; font-size: 22px; }
 body {
     background: #d8cbb0;
-    background-image:
-        radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
-        linear-gradient(#d8cbb0, #cfc2a6);
-    color: #1b1b1b;
-    padding: 40px;
+    background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+                      linear-gradient(#d8cbb0, #cfc2a6);
+    color: #1b1b1b; padding: 40px;
 }
-
-/* LOGO */
-.header {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
-.header img {
-    width: 300px;
-}
-
-/* PAPER CARDS */
+.header { text-align: center; margin-bottom: 40px; }
+.header img { width: 300px; }
 .card {
-    background: #f2e6c9;
-    padding: 30px;
-    margin-bottom: 35px;
+    background: #f2e6c9; padding: 30px; margin-bottom: 35px;
     border: 3px solid #1b1b1b;
     box-shadow: 6px 6px 0 #1b1b1b, inset 0 0 35px rgba(0,0,0,0.25);
     position: relative;
 }
-
 .card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
+    content: ""; position: absolute; inset: 0;
     background: radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
-    background-size: 3px 3px;
-    mix-blend-mode: multiply;
-    pointer-events: none;
+    background-size: 3px 3px; mix-blend-mode: multiply; pointer-events: none;
 }
-
-h2 {
-    font-size: 40px;
-    letter-spacing: 2px;
-    margin-top: 0;
-    margin-bottom: 20px;
-}
-
-/* RUNS */
-.run {
-    background: #1b1b1b;
-    color: #ffffff;
-    padding: 18px;
-    margin-bottom: 14px;
-    cursor: pointer;
-    font-size: 26px;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.run:hover {
-    background: #333;
-}
-
-.run-details {
-    display: none;
-    margin-top: 12px;
-    margin-bottom: 18px;
-    padding: 16px;
-    background: #f2e6c9;
-    font-size: 24px;
-}
-
-/* TABLE */
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 14px;
-    font-size: 26px;
-    border-bottom: 2px solid #1b1b1b;
-}
-
-th {
-    text-transform: uppercase;
-}
-
+h2 { font-size: 40px; letter-spacing: 2px; margin-top: 0; margin-bottom: 20px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 14px; font-size: 26px; border-bottom: 2px solid #1b1b1b; }
+th { text-transform: uppercase; }
 .left { text-align: left; }
 .right { text-align: right; }
-
-.highlight-row {
-    background: #1b1b1b;
-    color: #ffffff;
-    font-weight: bold;
-}
 </style>
 </head>
 
@@ -125,7 +49,13 @@ th {
 
 <div class="card">
     <h2>Previous Runs</h2>
-    <div id="runs"></div>
+    <table>
+        <tr>
+            <th class="left">Run</th>
+            <th class="right">Time</th>
+        </tr>
+        <tbody id="runs"></tbody>
+    </table>
 </div>
 
 <div class="card">
@@ -133,7 +63,7 @@ th {
     <table>
         <tr>
             <th class="left">Name</th>
-            <th class="right">Time</th>
+            <th class="right">Best Time</th>
         </tr>
         <tbody id="leaderboard"></tbody>
     </table>
@@ -142,6 +72,7 @@ th {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBuEKw2v6nzXlbWh4TGJgdpSEg8tJ3M8zA",
@@ -155,83 +86,88 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
-const loggedInEmail = localStorage.getItem("loggedInEmail");
+// Hard‑coded target UID
+const targetUid = "XZMCf5Tb3aPCbwEP9C0DJCbh9EC3";
 
-/* PLAYER DATA */
-onValue(ref(db, "PlayerData"), (snapshot) => {
-    const players = snapshot.val();
-    if (!players || !loggedInEmail) return;
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        console.warn("⚠️ No authenticated user on stats page. Database rules may block reads.");
+        return;
+    }
+    console.log("Authenticated user on stats page:", user.uid);
 
-    const user = Object.values(players).find(p => p.Email === loggedInEmail);
-    if (!user) return;
+    // --- Player Stats + Runs for target UID ---
+    onValue(ref(db, "PlayerData/" + targetUid), (snapshot) => {
+        console.log("✅ onValue callback fired for target UID");
 
-    /* ENDINGS */
-    document.getElementById("endings").innerText =
-        user.Endings ? user.Endings.length : 0;
+        if (!snapshot.exists()) {
+            console.warn("⚠️ No data found for UID:", targetUid);
+            return;
+        }
 
-    /* PREVIOUS RUNS */
-    const runsContainer = document.getElementById("runs");
-    runsContainer.innerHTML = "";
+        const userData = snapshot.val();
+        console.log("User data for target UID:", userData);
 
-    if (!user.PreviousRuns) return;
+        // Endings
+        document.getElementById("endings").innerText =
+            (userData.Endings && userData.Endings.length) ? userData.Endings.length : 0;
 
-    const runsArray = Object.values(user.PreviousRuns);
+        // Previous Runs
+        const runsTable = document.getElementById("runs");
+        runsTable.innerHTML = "";
+        const runsArray = userData.PreviousRuns || [];
+        console.log("PreviousRuns array:", runsArray);
 
-    // TAKE LAST 4 RUNS
-    const lastFourRuns = runsArray.slice(-4);
+        runsArray.slice(-4).forEach((run, index) => {
+            console.log("Run object:", run);
+            runsTable.innerHTML += `
+                <tr>
+                    <td class="left">Run ${runsArray.length - 4 + index + 1}</td>
+                    <td class="right">${formatTime(run.Time)}</td>
+                </tr>
+            `;
+        });
+    });
 
-    lastFourRuns.forEach((run, index) => {
-        const row = document.createElement("div");
-        row.className = "run";
-        row.innerHTML = `
-            <span><strong>Run ${runsArray.length - lastFourRuns.length + index + 1}</strong></span>
-            <span>${formatTime(run.Time)}</span>
-        `;
+    // --- Leaderboard ---
+    onValue(ref(db, "PlayerData"), (snapshot) => {
+        if (!snapshot.exists()) return;
+        const players = snapshot.val();
 
-        const details = document.createElement("div");
-        details.className = "run-details";
-        details.innerHTML = `
-            <p><strong>Time:</strong> ${formatTime(run.Time)}</p>
-            <p><strong>Tasks Completed:</strong></p>
-            ${(run.Tasklist || []).map(task =>
-                `<p>- ${task.TaskName}: ${task.CompletionCount}</p>`
-            ).join("")}
-        `;
+        const leaderboardEntries = Object.entries(players).map(([uid, pdata]) => {
+            const runs = pdata.PreviousRuns || [];
+            if (runs.length === 0) return null;
+            const bestTime = Math.min(...runs.map(r => r.Time || Infinity));
+            return { 
+                Username: pdata.Username || pdata.Email || uid, 
+                Time: bestTime 
+            };
+        }).filter(Boolean);
 
-        row.onclick = () => {
-            details.style.display =
-                details.style.display === "block" ? "none" : "block";
-        };
+        leaderboardEntries.sort((a, b) => a.Time - b.Time);
 
-        runsContainer.appendChild(row);
-        runsContainer.appendChild(details);
+        document.getElementById("leaderboard").innerHTML =
+            leaderboardEntries.map(entry => `
+                <tr>
+                    <td class="left">${entry.Username}</td>
+                    <td class="right">${formatTime(entry.Time)}</td>
+                </tr>
+            `).join("");
     });
 });
 
-/* LEADERBOARD */
-onValue(ref(db, "Leaderboard"), (snapshot) => {
-    const data = snapshot.val();
-    if (!data) return;
-
-    data.sort((a, b) => a.Time - b.Time);
-
-    document.getElementById("leaderboard").innerHTML =
-        data.map(entry => `
-            <tr class="${entry.Username === loggedInEmail ? 'highlight-row' : ''}">
-                <td class="left">${entry.Username}</td>
-                <td class="right">${formatTime(entry.Time)}</td>
-            </tr>
-        `).join("");
-});
-
-/* TIME FORMAT */
 function formatTime(seconds) {
+    if (!seconds || seconds === Infinity) return "No runs yet";
     const min = Math.floor(seconds / 60);
     const sec = seconds % 60;
     return `${min}m ${sec}s`;
 }
 </script>
+
+
+
 
 </body>
 </html>
