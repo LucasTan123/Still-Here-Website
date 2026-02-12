@@ -133,7 +133,7 @@ window.login = async function () {
         // Save UID for later use
         localStorage.setItem("loggedInUid", user.uid);
 
-        // (Optional) store email in database under PlayerData
+        // Store email in database under PlayerData
         set(ref(db, "PlayerData/" + user.uid + "/Email"), email);
 
         // Confirm localStorage saved correctly
