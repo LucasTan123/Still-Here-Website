@@ -9,7 +9,7 @@
 <style>
 * { 
     font-family: "Just Me Again Down Here", cursive; 
-    font-size: 32px; /* Increased base size */
+    font-size: 32px;
 }
 
 body {
@@ -20,14 +20,8 @@ body {
     padding: 60px;
 }
 
-.header { 
-    text-align: center; 
-    margin-bottom: 60px; 
-}
-
-.header img { 
-    width: 380px; 
-}
+.header { text-align: center; margin-bottom: 60px; }
+.header img { width: 380px; }
 
 .card {
     background: #f2e6c9;
@@ -38,24 +32,11 @@ body {
     position: relative;
 }
 
-.card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
-    background-size: 3px 3px;
-    mix-blend-mode: multiply;
-    pointer-events: none;
-}
-
 h2 {
-    font-size: 56px; /* Bigger section headers */
-    letter-spacing: 2px;
-    margin-top: 0;
+    font-size: 56px;
     margin-bottom: 35px;
 }
 
-/* Bigger stats text */
 .card p {
     font-size: 40px;
     margin: 20px 0;
@@ -68,18 +49,13 @@ table {
 
 th, td {
     padding: 24px;
-    font-size: 40px; /* Bigger table text */
+    font-size: 40px;
     border-bottom: 2px solid #1b1b1b;
-}
-
-th { 
-    text-transform: uppercase; 
 }
 
 .left { text-align: left; }
 .right { text-align: right; }
 
-/* Bigger logout button */
 button {
     padding: 24px 60px;
     font-size: 44px;
@@ -88,10 +64,6 @@ button {
     border: none;
     cursor: pointer;
     box-shadow: 6px 6px 0 #000;
-}
-
-button:hover { 
-    background: #333; 
 }
 
 .logout-container {
@@ -104,40 +76,40 @@ button:hover {
 <body>
 
 <div class="header">
-    <img src="StillHereLogo.png" alt="Still Here Logo">
+    <img src="StillHereLogo.png">
 </div>
 
 <div class="card">
-    <h2>Player Stats</h2>
-    <p><strong>Total Runs:</strong> <span id="totalRuns">0</span></p>
-    <p><strong>Best Time:</strong> <span id="bestTime">0m 0s</span></p>
-    <p><strong>Endings Achieved:</strong> <span id="endings">0</span></p>
+<h2>Player Stats</h2>
+<p><strong>Total Runs:</strong> <span id="totalRuns">0</span></p>
+<p><strong>Best Time:</strong> <span id="bestTime">0m 0s</span></p>
+<p><strong>Endings Achieved:</strong> <span id="endings">0</span></p>
 </div>
 
 <div class="card">
-    <h2>Previous Runs</h2>
-    <table>
-        <tr>
-            <th class="left">Run</th>
-            <th class="right">Time</th>
-        </tr>
-        <tbody id="runs"></tbody>
-    </table>
+<h2>Previous Runs</h2>
+<table>
+<tr>
+<th class="left">Run</th>
+<th class="right">Time</th>
+</tr>
+<tbody id="runs"></tbody>
+</table>
 </div>
 
 <div class="card">
-    <h2>Leaderboard</h2>
-    <table>
-        <tr>
-            <th class="left">Player</th>
-            <th class="right">Best Time</th>
-        </tr>
-        <tbody id="leaderboard"></tbody>
-    </table>
+<h2>Leaderboard</h2>
+<table>
+<tr>
+<th class="left">Player</th>
+<th class="right">Best Time</th>
+</tr>
+<tbody id="leaderboard"></tbody>
+</table>
 </div>
 
 <div class="logout-container">
-    <button onclick="logout()">Logout</button>
+<button onclick="logout()">Logout</button>
 </div>
 
 <script type="module">
@@ -161,9 +133,8 @@ const auth = getAuth(app);
 
 const uid = localStorage.getItem("loggedInUid");
 
-if (!uid) {
-    window.location.href = "StillHereLogin.html";
-}
+if (!uid) window.location.href = "StillHereLogin.html";
+
 
 // ---------- PLAYER DATA ----------
 get(ref(db, "PlayerData/" + uid)).then(snapshot => {
@@ -190,47 +161,33 @@ get(ref(db, "PlayerData/" + uid)).then(snapshot => {
             <tr>
                 <td class="left">Run ${runs.length - index}</td>
                 <td class="right">${formatTime(run.Time)}</td>
-            </tr>
-        `;
+            </tr>`;
     });
 
 });
 
-// ---------- LEADERBOARD ----------
-get(ref(db, "PlayerData")).then(snapshot => {
+
+// ---------- FIXED LEADERBOARD ----------
+get(ref(db, "Leaderboard")).then(snapshot => {
 
     if (!snapshot.exists()) return;
 
-    const players = snapshot.val();
-    const leaderboardEntries = [];
+    const leaderboardData = snapshot.val();
 
-    Object.entries(players).forEach(([uid, pdata]) => {
+    const leaderboardEntries = Object.values(leaderboardData);
 
-        if (!pdata.PreviousRuns) return;
-
-        const validTimes = pdata.PreviousRuns
-            .map(r => r.Time)
-            .filter(t => typeof t === "number");
-
-        if (validTimes.length === 0) return;
-
-        leaderboardEntries.push({
-            uid: uid,
-            time: Math.min(...validTimes)
-        });
-    });
-
-    leaderboardEntries.sort((a, b) => a.time - b.time);
+    leaderboardEntries.sort((a, b) => a.Time - b.Time);
 
     document.getElementById("leaderboard").innerHTML =
         leaderboardEntries.map(entry => `
             <tr>
-                <td class="left">${entry.uid}</td>
-                <td class="right">${formatTime(entry.time)}</td>
+                <td class="left">${entry.Username}</td>
+                <td class="right">${formatTime(entry.Time)}</td>
             </tr>
         `).join("");
 
 });
+
 
 // ---------- LOGOUT ----------
 window.logout = function() {
@@ -239,6 +196,7 @@ window.logout = function() {
         window.location.href = "StillHereLogin.html";
     });
 };
+
 
 function formatTime(seconds) {
     if (!seconds || seconds === Infinity) return "No runs yet";
