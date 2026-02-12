@@ -4,10 +4,14 @@
 <meta charset="UTF-8">
 <title>StillHereLogin</title>
 
+<!-- Import handwriting-style font -->
 <link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet">
 
 <style>
+/* Apply font and base size to all elements */
 * { font-family: "Just Me Again Down Here", cursive; font-size: 22px; }
+
+/* Body styling: background gradient + flexbox centering */
 body {
     background: #d8cbb0;
     background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
@@ -16,38 +20,52 @@ body {
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     height: 100vh; margin: 0;
 }
+
+/* Logo styling */
 .logo { margin-bottom: 30px; }
 .logo img { width: 260px; }
+
+/* Login box styling */
 .login-box {
     background: #f2e6c9; padding: 45px; width: 380px;
     border: 3px solid #1b1b1b;
     box-shadow: 6px 6px 0 #1b1b1b, inset 0 0 35px rgba(0,0,0,0.25);
     position: relative;
 }
+
+/* Decorative overlay inside login box */
 .login-box::before {
     content: ""; position: absolute; inset: 0;
     background: radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
     background-size: 3px 3px; mix-blend-mode: multiply; pointer-events: none;
 }
+
+/* Input fields styling */
 input {
     width: 91%; padding: 16px; font-size: 30px;
     border: 2px solid #1b1b1b; margin-bottom: 24px; background: #ffffff;
 }
+
+/* Button styling */
 button {
     width: 100%; padding: 16px; background: #1b1b1b; color: #ffffff;
     border: none; font-size: 30px; cursor: pointer;
 }
 button:hover { background: #333; }
+
+/* Error message styling */
 #error { margin-top: 16px; color: #8b0000; font-size: 26px; text-align: center; }
 </style>
 </head>
 
 <body>
 
+<!-- Logo section -->
 <div class="logo">
     <img src="StillHereLogo.png" alt="Still Here Logo">
 </div>
 
+<!-- Login form -->
 <div class="login-box">
     <input id="email" type="email" placeholder="Enter your email">
     <input id="password" type="password" placeholder="Enter your password">
@@ -56,10 +74,12 @@ button:hover { background: #333; }
 </div>
 
 <script type="module">
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
+// Firebase project configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBuEKw2v6nzXlbWh4TGJgdpSEg8tJ3M8zA",
     authDomain: "still-here-b0b26.firebaseapp.com",
@@ -70,19 +90,23 @@ const firebaseConfig = {
     appId: "1:108127904042:web:fd2fbd5ad00db758197e53"
 };
 
+// Initialize Firebase services 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+// Login function triggered by button click
 window.login = async function () {
-    console.log("login() function called"); // ✅ confirms button is wired
+    console.log("login() function called"); // Debug: confirms button works
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
     const errorBox = document.getElementById("error");
 
+    // Clear previous error
     errorBox.innerText = "";
 
+    // Input validation
     if (!email && !password) {
         errorBox.innerText = "Please enter your email and password.";
         return;
@@ -97,6 +121,7 @@ window.login = async function () {
     }
 
     try {
+        // Attempt Firebase login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
@@ -105,21 +130,22 @@ window.login = async function () {
         console.log("Email entered:", email);
         console.log("UID from Firebase Auth:", user.uid);
 
-        // Save UID for website lookup
+        // Save UID for later use
         localStorage.setItem("loggedInUid", user.uid);
 
-        // (optional) also store email in DB
+        // (Optional) store email in database under PlayerData
         set(ref(db, "PlayerData/" + user.uid + "/Email"), email);
 
         // Confirm localStorage saved correctly
         console.log("UID saved in localStorage:", localStorage.getItem("loggedInUid"));
 
-        // Delay redirect so logs are visible
+        // Redirect to main site after short delay
         setTimeout(() => {
             window.location.href = "StillHereWebsite.html";
         }, 2000);
 
     } catch (error) {
+        // Handle login errors with user-friendly messages
         console.log("Login error code:", error.code);
         if (error.code === "auth/user-not-found") {
             errorBox.innerText = "This email is not registered.";
@@ -135,7 +161,6 @@ window.login = async function () {
     }
 };
 </script>
-
 
 </body>
 </html>

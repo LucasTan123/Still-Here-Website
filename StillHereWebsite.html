@@ -4,14 +4,17 @@
 <meta charset="UTF-8">
 <title>StillHereWebsite</title>
 
+<!-- Import custom handwriting-style font -->
 <link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap" rel="stylesheet">
 
 <style>
+/* Apply font and base size to all elements */
 * { 
     font-family: "Just Me Again Down Here", cursive; 
     font-size: 32px;
 }
 
+/* Body styling: background gradient + padding */
 body {
     background: #d8cbb0;
     background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
@@ -20,9 +23,11 @@ body {
     padding: 60px;
 }
 
+/* Header section with centered logo */
 .header { text-align: center; margin-bottom: 60px; }
 .header img { width: 380px; }
 
+/* Card container styling */
 .card {
     background: #f2e6c9;
     padding: 50px;
@@ -32,16 +37,19 @@ body {
     position: relative;
 }
 
+/* Headings inside cards */
 h2 {
     font-size: 56px;
     margin-bottom: 35px;
 }
 
+/* Paragraphs inside cards */
 .card p {
     font-size: 40px;
     margin: 20px 0;
 }
 
+/* Table styling */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -53,9 +61,11 @@ th, td {
     border-bottom: 2px solid #1b1b1b;
 }
 
+/* Alignment helpers */
 .left { text-align: left; }
 .right { text-align: right; }
 
+/* Button styling */
 button {
     padding: 24px 60px;
     font-size: 44px;
@@ -66,6 +76,7 @@ button {
     box-shadow: 6px 6px 0 #000;
 }
 
+/* Logout button container */
 .logout-container {
     text-align: center;
     margin-top: 70px;
@@ -75,10 +86,12 @@ button {
 
 <body>
 
+<!-- Logo header -->
 <div class="header">
     <img src="StillHereLogo.png">
 </div>
 
+<!-- Player stats card -->
 <div class="card">
 <h2>Player Stats</h2>
 <p><strong>Total Runs:</strong> <span id="totalRuns">0</span></p>
@@ -86,6 +99,7 @@ button {
 <p><strong>Endings Achieved:</strong> <span id="endings">0</span></p>
 </div>
 
+<!-- Previous runs card -->
 <div class="card">
 <h2>Previous Runs</h2>
 <table>
@@ -97,6 +111,7 @@ button {
 </table>
 </div>
 
+<!-- Leaderboard card -->
 <div class="card">
 <h2>Leaderboard</h2>
 <table>
@@ -108,15 +123,18 @@ button {
 </table>
 </div>
 
+<!-- Logout button -->
 <div class="logout-container">
 <button onclick="logout()">Logout</button>
 </div>
 
-<script type="module">
+<script type="module"> 
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
+/* Firebase project configuration */
 const firebaseConfig = {
     apiKey: "AIzaSyBuEKw2v6nzXlbWh4TGJgdpSEg8tJ3M8zA",
     authDomain: "still-here-b0b26.firebaseapp.com",
@@ -127,16 +145,19 @@ const firebaseConfig = {
     appId: "1:108127904042:web:fd2fbd5ad00db758197e53"
 };
 
+/* Initialize Firebase services */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+/* Get logged-in user ID from local storage */
 const uid = localStorage.getItem("loggedInUid");
 
+/* Redirect to login if no user is logged in */
 if (!uid) window.location.href = "StillHereLogin.html";
 
 
-// ---------- PLAYER DATA ----------
+// PLAYER DATA 
 get(ref(db, "PlayerData/" + uid)).then(snapshot => {
 
     if (!snapshot.exists()) return;
@@ -145,14 +166,17 @@ get(ref(db, "PlayerData/" + uid)).then(snapshot => {
     const runs = userData.PreviousRuns || [];
     const endings = userData.Endings || [];
 
+    // Update stats
     document.getElementById("totalRuns").innerText = runs.length;
     document.getElementById("endings").innerText = endings.length;
 
+    // Calculate best time
     if (runs.length > 0) {
         const bestTime = Math.min(...runs.map(r => r.Time || Infinity));
         document.getElementById("bestTime").innerText = formatTime(bestTime);
     }
 
+    // Display last 5 runs (most recent first)
     const runsTable = document.getElementById("runs");
     runsTable.innerHTML = "";
 
@@ -167,17 +191,20 @@ get(ref(db, "PlayerData/" + uid)).then(snapshot => {
 });
 
 
-// ---------- FIXED LEADERBOARD ----------
+// LEADERBOARD 
 get(ref(db, "Leaderboard")).then(snapshot => {
 
     if (!snapshot.exists()) return;
 
     const leaderboardData = snapshot.val();
 
+    // Convert object to array
     const leaderboardEntries = Object.values(leaderboardData);
 
+    // Sort by best time ascending
     leaderboardEntries.sort((a, b) => a.Time - b.Time);
 
+    // Render leaderboard
     document.getElementById("leaderboard").innerHTML =
         leaderboardEntries.map(entry => `
             <tr>
@@ -189,7 +216,7 @@ get(ref(db, "Leaderboard")).then(snapshot => {
 });
 
 
-// ---------- LOGOUT ----------
+// LOGOUT 
 window.logout = function() {
     signOut(auth).then(() => {
         localStorage.removeItem("loggedInUid");
@@ -198,6 +225,7 @@ window.logout = function() {
 };
 
 
+// Helper function: format seconds into "Xm Ys" string
 function formatTime(seconds) {
     if (!seconds || seconds === Infinity) return "No runs yet";
     const min = Math.floor(seconds / 60);
